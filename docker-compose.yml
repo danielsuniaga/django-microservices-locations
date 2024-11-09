@@ -14,6 +14,7 @@ services:
       - ./dump:/docker-entrypoint-initdb.d
       - ./conf:/etc/mysql/conf.d
       - persistent:/var/lib/mysql
+
   web:
     container_name: ${PROJECT_NAME}
     build: .
@@ -25,6 +26,25 @@ services:
       - '${PROJECT_PORT_EXTERNAL}:${PROJECT_PORT_INTERNAL}'
     expose:
       - ${PROJECT_PORT_EXTERNAL}
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  web_another:
+    container_name: ${ANOTHER_PROJECT_NAME}
+    build: .
+    working_dir: /code
+    command: python manage.py runserver 0.0.0.0:${ANOTHER_PROJECT_PORT_INTERNAL}
+    volumes:
+      - .:/code
+    ports:
+      - '${ANOTHER_PROJECT_PORT_EXTERNAL}:${ANOTHER_PROJECT_PORT_INTERNAL}'
+    expose:
+      - ${ANOTHER_PROJECT_PORT_EXTERNAL}
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     environment:
@@ -34,7 +54,28 @@ services:
       - '${PHPMYADMIN_PORT_EXTERNAL}:${PHPMYADMIN_PORT_INTERNAL}'
     networks:
       - default
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build: .
+    working_dir: /code
+    command: celery -A dev worker -l info
+    depends_on:
+      - web
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/code
+
 networks:
   default:
+
 volumes:
   persistent:
