@@ -1,10 +1,17 @@
-FROM python:3.8.18
-
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /usr/local/bin/wait-for-it.sh
-
-RUN chmod +x /usr/local/bin/wait-for-it.sh
-
-COPY requirements.txt /code/
-RUN pip install --upgrade pip && pip install -r /code/requirements.txt
+FROM python:3.8
 
 WORKDIR /code
+
+RUN pip install poetry
+
+RUN poetry config virtualenvs.create false
+
+COPY pyproject.toml /code/
+
+RUN poetry install
+
+COPY . /code/
+
+EXPOSE 8000
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

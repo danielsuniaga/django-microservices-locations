@@ -27,3 +27,8 @@ wheel==0.37.1
 wrapt==1.14.1
 python-decouple==3.5
 cryptography==2.7
+celery==5.2.7
+redis==4.3.4
+structlog==22.1.0
+coverage==6.4.1
+
